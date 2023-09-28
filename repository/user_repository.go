@@ -13,6 +13,7 @@ type userRepository struct {
 type UserRepository interface {
 	Save(user models.User) (models.User, error)
 	GetAllUser() ([]models.User, error)
+	FindByEmail(email string) (models.User, error)
 }
 
 func (u *userRepository) GetAllUser() ([]models.User, error) {
@@ -25,6 +26,16 @@ func (u *userRepository) GetAllUser() ([]models.User, error) {
 
 func (u *userRepository) Save(user models.User) (models.User, error) {
 	if err := u.db.Create(&user).Error; err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (u *userRepository) FindByEmail(email string) (models.User, error) {
+	var user models.User
+
+	err := u.db.Where("email = ?", email).Find(&user).Error
+	if err != nil {
 		return user, err
 	}
 	return user, nil

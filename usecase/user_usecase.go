@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"web-app-crowdfounding/models"
 	"web-app-crowdfounding/repository"
 
@@ -14,6 +15,7 @@ type userUseCase struct {
 type UserUseCase interface {
 	GetAllUser() ([]models.User, error)
 	RegisterUser(input models.RegisterUserInput) (models.User, error)
+	Login(input models.LoginUser) (models.User, error)
 }
 
 func (u *userUseCase) GetAllUser() ([]models.User, error) {
@@ -38,6 +40,26 @@ func (u *userUseCase) RegisterUser(input models.RegisterUserInput) (models.User,
 		return newUser, err
 	}
 	return newUser, nil
+}
+
+func (u *userUseCase) Login(input models.LoginUser) (models.User, error) {
+	email := input.Email
+	password := input.Password
+
+	user, err := u.userRepo.FindByEmail(email)
+
+	if err != nil {
+		return user, err
+	}
+	if user.ID == 0 {
+		return user, errors.New("user Not Found")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+	if err != nil {
+		return user, err
+	}
+	return user, nil
 }
 
 func NewUserUseCase(uRepo repository.UserRepository) *userUseCase {

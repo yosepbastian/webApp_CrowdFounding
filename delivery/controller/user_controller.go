@@ -58,12 +58,40 @@ func (u *userController) RegisterUser(ctx *gin.Context) {
 
 }
 
+func (u *userController) Login(ctx *gin.Context) {
+	var userInput models.LoginUser
+
+	err := ctx.ShouldBindJSON(&userInput)
+	if err != nil {
+		formatErr := helper.FormatValidationErr(err)
+		errorMessage := gin.H{"errors": formatErr}
+		response := helper.ApiResponse("Login failed", http.StatusUnprocessableEntity, "Error", errorMessage)
+		ctx.JSON(http.StatusUnprocessableEntity, response)
+		return
+
+	}
+
+	loginuser, err := u.userUseCase.Login(userInput)
+	if err != nil {
+
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ApiResponse("Login failed", http.StatusUnprocessableEntity, "Error", errorMessage)
+		ctx.JSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+	formatter := helper.FormatUser(loginuser, "")
+	response := helper.ApiResponse("Login success", http.StatusOK, "success", formatter)
+	ctx.JSON(http.StatusOK, response)
+
+}
+
 func NewUserController(routerGroup *gin.RouterGroup, userUC usecase.UserUseCase) *userController {
 	newUserController := userController{
 		router:      routerGroup,
 		userUseCase: userUC,
 	}
 
-	newUserController.router.POST("/users/register", newUserController.RegisterUser)
+	newUserController.router.POST("/users", newUserController.RegisterUser)
+	newUserController.router.POST("/sessions", newUserController.Login)
 	return &newUserController
 }
